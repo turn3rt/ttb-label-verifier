@@ -41,7 +41,7 @@ Bottler address and country of origin are out of scope. Two blank ABV fields fai
 
 ## What I would do next
 
-The code is already sketched in `lib/extract.ts`. With a budget, set `XAI_API_KEY` or `GEMINI_API_KEY` on the server, never in git, send the image with the existing prompt, and require JSON for `brand`, `classType`, `abv`, `netContents`, `governmentWarning`, and `warningHeaderBold`. Keep capitalization exact. Pass that object to `lib/match.ts`, which already checks all-caps plus bold on the label, fuzzy brand, class/type, ABV (including proof), and net contents. Time a new label against the 5-second limit. For a network that cannot call cloud ML, keep the same JSON contract and swap in an on-prem model. Do not build that path now.
+The code is already sketched in `lib/extract.ts`. With a budget, set `XAI_API_KEY` or `GEMINI_API_KEY` on the server, never in git, send the image with the existing prompt, and require JSON for `brand`, `classType`, `abv`, `netContents`, `governmentWarning`, and `warningHeaderBold`. Keep capitalization exact. Pass that object to `lib/match.ts`, which already checks all-caps plus bold on the label, fuzzy brand, class/type, ABV (including proof), and net contents. Time a new label against the 5-second limit. For a network that cannot call cloud ML, keep the same JSON contract and swap in an on-prem model.
 
 ## License
 
