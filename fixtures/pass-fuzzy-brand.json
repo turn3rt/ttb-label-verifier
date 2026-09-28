@@ -1,6 +1,8 @@
 {
   "id": "pass-fuzzy-brand",
   "expectedOverall": "Pass",
+  "sha256": "6666fc3296d0045f97cfb2adfb24254e622d73f1fb252ec50fe8b6fbf4211530",
+  "image": "pass-fuzzy-brand.png",
   "application": {
     "brand": "Stone's Throw",
     "classType": "Straight Bourbon Whiskey",
@@ -8,5 +10,12 @@
     "netContents": "750 mL",
     "governmentWarning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems."
   },
-  "notes": "Fuzzy: STONE'S THROW / 90 Proof / 750ml on label should still Pass when images exist."
+  "labelExtracted": {
+    "brand": "STONE'S THROW",
+    "classType": "Straight Bourbon Whiskey",
+    "abv": "90 Proof",
+    "netContents": "750ml",
+    "governmentWarning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems."
+  },
+  "notes": "Fuzzy brand/ABV/net should PASS via lib/match.ts with zero API keys."
 }

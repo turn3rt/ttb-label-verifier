@@ -23,6 +23,8 @@ const empty: ApplicationFields = {
 export default function HomePage() {
   const [fields, setFields] = useState<ApplicationFields>(empty);
   const [files, setFiles] = useState<FileList | null>(null);
+  const [fixtureId, setFixtureId] = useState<string | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<VerifyResponse | null>(null);
@@ -36,9 +38,26 @@ export default function HomePage() {
     setFields((prev) => ({ ...prev, [key]: value }));
   }
 
-  function loadFixture(app: ApplicationFields) {
-    setFields({ ...app });
+  async function loadFixture(fx: (typeof FIXTURES)[number]["data"]) {
+    setFields({ ...(fx.application as ApplicationFields) });
+    setFixtureId(fx.id);
     setError(null);
+    setResult(null);
+    setFiles(null);
+    const image = (fx as { image?: string }).image;
+    if (image) {
+      setPreviewUrl(`/api/fixtures/${image}`);
+      try {
+        const res = await fetch(`/api/fixtures/${image}`);
+        const blob = await res.blob();
+        const file = new File([blob], image, { type: "image/png" });
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        setFiles(dt.files);
+      } catch {
+        // preview URL still works; verify can use fixtureId alone
+      }
+    }
   }
 
   async function onVerify() {
@@ -46,16 +65,18 @@ export default function HomePage() {
     setError(null);
     setResult(null);
     try {
-      if (!files || files.length === 0) {
-        throw new Error("Choose one or more label images.");
-      }
       const body = new FormData();
       body.set("brand", fields.brand);
       body.set("classType", fields.classType);
       body.set("abv", fields.abv);
       body.set("netContents", fields.netContents);
       body.set("governmentWarning", fields.governmentWarning);
-      Array.from(files).forEach((f) => body.append("files", f));
+      if (fixtureId) body.set("fixtureId", fixtureId);
+      if (files && files.length > 0) {
+        Array.from(files).forEach((f) => body.append("files", f));
+      } else if (!fixtureId) {
+        throw new Error("Choose a fixture button or upload label image(s).");
+      }
 
       const res = await fetch("/api/verify", { method: "POST", body });
       const data = await res.json();
@@ -74,27 +95,42 @@ export default function HomePage() {
     <main>
       <h1>TTB Label Verifier</h1>
       <p className="sub">
-        Prototype: compare label image(s) to application fields. Fuzzy match on
-        brand, class/type, ABV, and net contents. Exact match on government
-        warning header (<code>GOVERNMENT WARNING:</code> all caps).
+        Prototype: compare label image(s) to application fields. Fixture buttons
+        work offline with zero API keys (real <code>lib/match.ts</code> scoring).
+        Fuzzy: brand, class/type, ABV, net contents. Exact:{" "}
+        <code>GOVERNMENT WARNING:</code> all caps.
       </p>
 
       <section className="card">
-        <strong>Load fixture application fields</strong>
+        <strong>Demo fixtures (no API key)</strong>
         <div className="row">
           {FIXTURES.map((fx) => (
             <button
               key={fx.data.id}
               type="button"
               className="secondary"
-              onClick={() =>
-                loadFixture(fx.data.application as ApplicationFields)
-              }
+              onClick={() => loadFixture(fx.data)}
             >
               {fx.label}
             </button>
           ))}
         </div>
+        {previewUrl && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={previewUrl}
+            alt="Selected fixture label"
+            style={{
+              marginTop: "0.75rem",
+              maxWidth: "220px",
+              border: "1px solid var(--line)",
+              borderRadius: 6,
+            }}
+          />
+        )}
+        {fixtureId && (
+          <p className="meta">Active fixture: {fixtureId} (offline path)</p>
+        )}
       </section>
 
       <section className="card">
@@ -143,7 +179,11 @@ export default function HomePage() {
           type="file"
           accept="image/*"
           multiple
-          onChange={(e) => setFiles(e.target.files)}
+          onChange={(e) => {
+            setFiles(e.target.files);
+            setFixtureId(null);
+            setPreviewUrl(null);
+          }}
         />
         {fileNames.length > 0 && (
           <p className="meta">Selected: {fileNames.join(", ")}</p>
@@ -174,7 +214,7 @@ export default function HomePage() {
             </thead>
             <tbody>
               {result.results.map((r) => (
-                <tr key={r.fileName + r.elapsedMs}>
+                <tr key={r.fileName + String(r.elapsedMs)}>
                   <td>{r.fileName}</td>
                   <td className={r.overallPass ? "pass" : "fail"}>
                     {r.error ? "Error" : r.overallPass ? "Pass" : "Fail"}

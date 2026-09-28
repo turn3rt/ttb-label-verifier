@@ -44,3 +44,7 @@ Never commit real keys. `.env*` is gitignored (`.env.example` is safe).
 ## License
 
 Prototype for evaluation only.
+
+## Offline demo fixtures ($0)
+
+Three buttons load application fields + matching PNGs under `fixtures/`. Verification uses printed `labelExtracted` text from the JSON and runs `lib/match.ts` — no API key. Cloud vision remains only for unknown uploads when `XAI_API_KEY` or `GEMINI_API_KEY` is set.

@@ -1,6 +1,8 @@
 {
   "id": "pass-bourbon",
   "expectedOverall": "Pass",
+  "sha256": "81ced4f8fb9121ec9aac111594f4a7c4ff13d7dea8f90f72d01dc35e6276ea54",
+  "image": "pass-bourbon.png",
   "application": {
     "brand": "OLD TOM DISTILLERY",
     "classType": "Kentucky Straight Bourbon Whiskey",
@@ -8,5 +10,12 @@
     "netContents": "750 mL",
     "governmentWarning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems."
   },
-  "notes": "Baseline happy path. Pair with a label image in a later phase."
+  "labelExtracted": {
+    "brand": "OLD TOM DISTILLERY",
+    "classType": "Kentucky Straight Bourbon Whiskey",
+    "abv": "45% Alc./Vol. (90 Proof)",
+    "netContents": "750 mL",
+    "governmentWarning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems."
+  },
+  "notes": "Offline demo fixture. Exact matching label text; overall Pass via lib/match.ts."
 }

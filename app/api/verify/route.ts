@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { extractLabelFields } from "@/lib/extract";
+import {
+  FIXTURES,
+  NO_KEY_LIVE_MESSAGE,
+  hasCloudKey,
+  resolveFixture,
+} from "@/lib/fixtures";
 import { compareFields, overallPass } from "@/lib/match";
 import type {
   ApplicationFields,
@@ -25,13 +31,38 @@ export async function POST(req: NextRequest) {
   try {
     const form = await req.formData();
     const application = readApplication(form);
+    const fixtureIdField = String(form.get("fixtureId") ?? "") || null;
     const files = form
       .getAll("files")
       .filter((f): f is File => typeof f !== "string" && !!f && f.size > 0);
 
+    // Demo: fixtureId alone (no upload) still runs real match against labelExtracted.
+    if (files.length === 0 && fixtureIdField) {
+      const fx = resolveFixture({ fixtureId: fixtureIdField });
+      if (!fx) {
+        return NextResponse.json({ error: "Unknown fixture." }, { status: 400 });
+      }
+      const fields = compareFields(application, fx.labelExtracted);
+      const results: FileVerifyResult[] = [
+        {
+          fileName: fx.image,
+          overallPass: overallPass(fields),
+          fields,
+          extracted: fx.labelExtracted,
+          elapsedMs: Date.now() - wallStart,
+        },
+      ];
+      const body: VerifyResponse = {
+        results,
+        elapsedMs: Date.now() - wallStart,
+        provider: "fixture-offline",
+      };
+      return NextResponse.json(body);
+    }
+
     if (files.length === 0) {
       return NextResponse.json(
-        { error: "Upload at least one label image." },
+        { error: "Upload at least one label image, or use a fixture button." },
         { status: 400 },
       );
     }
@@ -41,11 +72,47 @@ export async function POST(req: NextRequest) {
 
     for (const file of files) {
       const fileStart = Date.now();
+      const buf = Buffer.from(await file.arrayBuffer());
+      const fx = resolveFixture({
+        fixtureId: fixtureIdField,
+        fileName: file.name,
+        bytes: buf,
+      });
+
+      if (fx) {
+        const fields = compareFields(application, fx.labelExtracted);
+        provider = "fixture-offline";
+        results.push({
+          fileName: file.name || fx.image,
+          overallPass: overallPass(fields),
+          fields,
+          extracted: fx.labelExtracted,
+          elapsedMs: Date.now() - fileStart,
+        });
+        continue;
+      }
+
+      if (!hasCloudKey()) {
+        results.push({
+          fileName: file.name || "label",
+          overallPass: false,
+          fields: [],
+          extracted: {
+            brand: "",
+            classType: "",
+            abv: "",
+            netContents: "",
+            governmentWarning: "",
+          },
+          error: NO_KEY_LIVE_MESSAGE,
+          elapsedMs: Date.now() - fileStart,
+        });
+        continue;
+      }
+
       try {
-        const buf = Buffer.from(await file.arrayBuffer());
-        const b64 = buf.toString("base64");
         const mime = file.type || "image/png";
-        const extracted = await extractLabelFields(b64, mime);
+        const extracted = await extractLabelFields(buf.toString("base64"), mime);
         provider = extracted.provider;
         const fields = compareFields(application, extracted.fields);
         results.push({
@@ -84,4 +151,14 @@ export async function POST(req: NextRequest) {
     const msg = e instanceof Error ? e.message : "Verify failed";
     return NextResponse.json({ error: msg }, { status: 500 });
   }
+}
+
+export async function GET() {
+  return NextResponse.json({
+    fixtures: FIXTURES.map((f) => ({
+      id: f.id,
+      image: f.image,
+      expectedOverall: f.expectedOverall,
+    })),
+  });
 }

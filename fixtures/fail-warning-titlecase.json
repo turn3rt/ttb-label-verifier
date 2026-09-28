@@ -1,6 +1,8 @@
 {
   "id": "fail-warning-titlecase",
   "expectedOverall": "Fail",
+  "sha256": "7a00580f903e4a6f5412d849ae11cb6df55f2c6eb11cb84e9fc92d86e45809fb",
+  "image": "fail-warning-titlecase.png",
   "application": {
     "brand": "OLD TOM DISTILLERY",
     "classType": "Kentucky Straight Bourbon Whiskey",
@@ -8,12 +10,12 @@
     "netContents": "750 mL",
     "governmentWarning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems."
   },
-  "simulatedExtracted": {
+  "labelExtracted": {
     "brand": "OLD TOM DISTILLERY",
     "classType": "Kentucky Straight Bourbon Whiskey",
     "abv": "45% Alc./Vol. (90 Proof)",
     "netContents": "750 mL",
     "governmentWarning": "Government Warning: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems."
   },
-  "notes": "Title-case warning header must FAIL exact check. UI button fills application fields only; image phase later."
+  "notes": "Title-case warning header on label must FAIL exact check via lib/match.ts."
 }
