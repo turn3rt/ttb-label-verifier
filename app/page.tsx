@@ -1,33 +1,45 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import passBourbon from "@/fixtures/pass-bourbon.json";
 import failWarning from "@/fixtures/fail-warning-titlecase.json";
 import passFuzzy from "@/fixtures/pass-fuzzy-brand.json";
-import type { ApplicationFields, VerifyResponse } from "@/lib/types";
+import { STANDARD_WARNING_BODY } from "@/lib/match";
+import type { ApplicationFields, FieldResult, VerifyResponse } from "@/lib/types";
 
-const FIXTURES = [
-  { label: "Fill: pass-bourbon", data: passBourbon },
-  { label: "Fill: fail-warning-titlecase", data: failWarning },
-  { label: "Fill: pass-fuzzy-brand", data: passFuzzy },
+const SAMPLES = [
+  { label: "Sample: passing bourbon", data: passBourbon },
+  { label: "Sample: warning rejected", data: failWarning },
+  { label: "Sample: capitalization and proof", data: passFuzzy },
 ] as const;
 
-const empty: ApplicationFields = {
+const DEFAULT_WARNING = `GOVERNMENT WARNING: ${STANDARD_WARNING_BODY}`;
+
+const initialFields: ApplicationFields = {
   brand: "",
   classType: "",
   abv: "",
   netContents: "",
-  governmentWarning: "",
+  governmentWarning: DEFAULT_WARNING,
+};
+
+const FIELD_LABELS: Record<string, string> = {
+  brand: "Brand matches",
+  classType: "Class/type matches",
+  abv: "ABV matches",
+  netContents: "Net contents matches",
+  governmentWarning: "Warning header is all caps and bold",
 };
 
 export default function HomePage() {
-  const [fields, setFields] = useState<ApplicationFields>(empty);
+  const [fields, setFields] = useState<ApplicationFields>(initialFields);
   const [files, setFiles] = useState<FileList | null>(null);
   const [fixtureId, setFixtureId] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<VerifyResponse | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fileNames = useMemo(() => {
     if (!files) return [];
@@ -38,12 +50,11 @@ export default function HomePage() {
     setFields((prev) => ({ ...prev, [key]: value }));
   }
 
-  async function loadFixture(fx: (typeof FIXTURES)[number]["data"]) {
+  async function loadSample(fx: (typeof SAMPLES)[number]["data"]) {
     setFields({ ...(fx.application as ApplicationFields) });
     setFixtureId(fx.id);
     setError(null);
     setResult(null);
-    setFiles(null);
     const image = (fx as { image?: string }).image;
     if (image) {
       setPreviewUrl(`/api/fixtures/${image}`);
@@ -53,10 +64,16 @@ export default function HomePage() {
         const file = new File([blob], image, { type: "image/png" });
         const dt = new DataTransfer();
         dt.items.add(file);
+        if (fileInputRef.current) {
+          fileInputRef.current.files = dt.files;
+        }
         setFiles(dt.files);
       } catch {
-        // preview URL still works; verify can use fixtureId alone
+        setFiles(null);
       }
+    } else {
+      setFiles(null);
+      setPreviewUrl(null);
     }
   }
 
@@ -75,7 +92,7 @@ export default function HomePage() {
       if (files && files.length > 0) {
         Array.from(files).forEach((f) => body.append("files", f));
       } else if (!fixtureId) {
-        throw new Error("Choose a fixture button or upload label image(s).");
+        throw new Error("Choose a sample button or upload label image(s).");
       }
 
       const res = await fetch("/api/verify", { method: "POST", body });
@@ -91,25 +108,46 @@ export default function HomePage() {
     }
   }
 
+  function renderFieldLine(f: FieldResult) {
+    const title = FIELD_LABELS[f.field] ?? f.field;
+    return (
+      <div key={f.field} style={{ marginBottom: "0.85rem" }}>
+        <div className={f.pass ? "pass" : "fail"} style={{ fontSize: "1.05rem" }}>
+          {f.pass ? "✓" : "✗"} {title}
+        </div>
+        <div className="meta">
+          Application: {f.application || "—"}
+          <br />
+          Label: {f.extracted || "—"}
+          {f.detail ? (
+            <>
+              <br />
+              {f.detail}
+            </>
+          ) : null}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <main>
       <h1>TTB Label Verifier</h1>
       <p className="sub">
-        Prototype: compare label image(s) to application fields. Fixture buttons
-        work offline with zero API keys (real <code>lib/match.ts</code> scoring).
-        Fuzzy: brand, class/type, ABV, net contents. Exact:{" "}
-        <code>GOVERNMENT WARNING:</code> all caps.
+        Compare label images to the fields on an alcohol label application.
+        Sample buttons load an example label and score it without an API key.
+        For your own photos, the server needs a vision API key.
       </p>
 
       <section className="card">
-        <strong>Demo fixtures (no API key)</strong>
+        <strong>Sample labels (no API key needed)</strong>
         <div className="row">
-          {FIXTURES.map((fx) => (
+          {SAMPLES.map((fx) => (
             <button
               key={fx.data.id}
               type="button"
               className="secondary"
-              onClick={() => loadFixture(fx.data)}
+              onClick={() => loadSample(fx.data)}
             >
               {fx.label}
             </button>
@@ -119,7 +157,7 @@ export default function HomePage() {
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={previewUrl}
-            alt="Selected fixture label"
+            alt="Selected sample label"
             style={{
               marginTop: "0.75rem",
               maxWidth: "220px",
@@ -127,9 +165,6 @@ export default function HomePage() {
               borderRadius: 6,
             }}
           />
-        )}
-        {fixtureId && (
-          <p className="meta">Active fixture: {fixtureId} (offline path)</p>
         )}
       </section>
 
@@ -176,6 +211,7 @@ export default function HomePage() {
         <label htmlFor="files">Label image(s) — one or many</label>
         <input
           id="files"
+          ref={fileInputRef}
           type="file"
           accept="image/*"
           multiple
@@ -200,52 +236,28 @@ export default function HomePage() {
       {result && (
         <section className="card">
           <strong>Results</strong>
-          <p className="meta">
-            Provider: {result.provider} · Wall time: {result.elapsedMs} ms
-          </p>
-          <table>
-            <thead>
-              <tr>
-                <th>File</th>
-                <th>Overall</th>
-                <th>Per-field</th>
-                <th>ms</th>
-              </tr>
-            </thead>
-            <tbody>
-              {result.results.map((r) => (
-                <tr key={r.fileName + String(r.elapsedMs)}>
-                  <td>{r.fileName}</td>
-                  <td className={r.overallPass ? "pass" : "fail"}>
-                    {r.error ? "Error" : r.overallPass ? "Pass" : "Fail"}
-                  </td>
-                  <td>
-                    {r.error ? (
-                      <span className="fail">{r.error}</span>
-                    ) : (
-                      <ul style={{ margin: 0, paddingLeft: "1.1rem" }}>
-                        {r.fields.map((f) => (
-                          <li key={f.field}>
-                            <span className={f.pass ? "pass" : "fail"}>
-                              {f.pass ? "Pass" : "Fail"}
-                            </span>{" "}
-                            {f.field} ({f.rule})
-                            {f.detail ? ` — ${f.detail}` : ""}
-                            <div className="meta">
-                              app: {f.application || "—"}
-                              <br />
-                              label: {f.extracted || "—"}
-                            </div>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </td>
-                  <td>{r.elapsedMs}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <p className="meta">Elapsed: {result.elapsedMs} ms</p>
+          {result.results.map((r) => (
+            <div
+              key={r.fileName + String(r.elapsedMs)}
+              style={{ marginTop: "1rem" }}
+            >
+              <div
+                className={r.error ? "fail" : r.overallPass ? "pass" : "fail"}
+                style={{ fontSize: "1.75rem", marginBottom: "0.5rem" }}
+              >
+                {r.error ? "Error" : r.overallPass ? "Pass" : "Fail"}
+              </div>
+              <p className="meta" style={{ marginTop: 0 }}>
+                {r.fileName} · {r.elapsedMs} ms
+              </p>
+              {r.error ? (
+                <p className="fail">{r.error}</p>
+              ) : (
+                r.fields.map(renderFieldLine)
+              )}
+            </div>
+          ))}
         </section>
       )}
     </main>

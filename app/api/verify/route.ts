@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
 
     if (files.length === 0) {
       return NextResponse.json(
-        { error: "Upload at least one label image, or use a fixture button." },
+        { error: "Upload at least one label image, or use a sample button." },
         { status: 400 },
       );
     }
@@ -73,9 +73,9 @@ export async function POST(req: NextRequest) {
     for (const file of files) {
       const fileStart = Date.now();
       const buf = Buffer.from(await file.arrayBuffer());
+      // fixtureId still allowed when files are uploaded; filename alone never counts.
       const fx = resolveFixture({
         fixtureId: fixtureIdField,
-        fileName: file.name,
         bytes: buf,
       });
 

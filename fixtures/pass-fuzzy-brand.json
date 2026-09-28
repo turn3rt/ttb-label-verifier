@@ -15,7 +15,8 @@
     "classType": "Straight Bourbon Whiskey",
     "abv": "90 Proof",
     "netContents": "750ml",
-    "governmentWarning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems."
+    "governmentWarning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems.",
+    "warningHeaderBold": true
   },
   "notes": "Fuzzy brand/ABV/net should PASS via lib/match.ts with zero API keys."
 }

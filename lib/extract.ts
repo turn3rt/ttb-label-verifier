@@ -3,9 +3,10 @@ import { STANDARD_WARNING_BODY } from "./match";
 
 const EXTRACT_PROMPT = `You extract alcohol beverage label fields from an image.
 Return ONLY a JSON object with keys:
-brand, classType, abv, netContents, governmentWarning
+brand, classType, abv, netContents, governmentWarning, warningHeaderBold
 Use empty string if a field is not visible.
-For governmentWarning, copy the warning EXACTLY as printed on the label (preserve capitalization of the header).
+For governmentWarning, copy the warning EXACTLY as printed on the label (preserve capitalization of the header "GOVERNMENT WARNING:" or whatever case appears).
+For warningHeaderBold, set true if the warning header text appears bold/heavy weight on the label, false otherwise.
 No markdown, no commentary.`;
 
 function pickProvider(): "xai" | "gemini" {
@@ -32,6 +33,16 @@ function parseJsonFields(text: string): ExtractedFields {
     string,
     unknown
   >;
+  const boldRaw = raw.warningHeaderBold ?? raw.warning_header_bold;
+  let warningHeaderBold: boolean | undefined;
+  if (typeof boldRaw === "boolean") {
+    warningHeaderBold = boldRaw;
+  } else if (typeof boldRaw === "string") {
+    const t = boldRaw.trim().toLowerCase();
+    if (t === "true" || t === "yes") warningHeaderBold = true;
+    else if (t === "false" || t === "no") warningHeaderBold = false;
+  }
+
   return {
     brand: String(raw.brand ?? ""),
     classType: String(raw.classType ?? raw.class_type ?? ""),
@@ -40,6 +51,7 @@ function parseJsonFields(text: string): ExtractedFields {
     governmentWarning: String(
       raw.governmentWarning ?? raw.government_warning ?? "",
     ),
+    warningHeaderBold,
   };
 }
 

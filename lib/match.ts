@@ -48,7 +48,7 @@ export function normalizeAbv(s: string): string {
 }
 
 /**
- * Normalize net contents: "750 mL" ≈ "750ml" ≈ "750 ML".
+ * Normalize net contents: "750 mL" ≈ "750ml" ≈ "750 ML" ≈ "0.75 L".
  */
 export function normalizeNet(s: string): string {
   const t = collapseSpace(s).toLowerCase().replace(/,/g, "");
@@ -81,14 +81,18 @@ export function fuzzyEqual(
 }
 
 /**
- * Exact warning check:
- * - Header must be literally GOVERNMENT WARNING: (all caps) at start (after trim)
- * - Body must match standard statement (whitespace-normalized, case-insensitive body OK? Spec says exact for header; body "must match required text")
- * Title-case "Government Warning:" = FAIL even if body is fine.
+ * Warning check:
+ * - Label header must be literally GOVERNMENT WARNING: (all caps).
+ * - Label header must be bold (warningHeaderBold === true).
+ * - Application may use title-case header; body is compared after stripping
+ *   a case-insensitive "government warning:" prefix from the application text.
+ * - If application warning is blank, compare label body to STANDARD_WARNING_BODY.
+ * - If application warning is filled, label body must match that application body.
  */
 export function checkGovernmentWarning(
   application: string,
   extracted: string,
+  warningHeaderBold?: boolean,
 ): { pass: boolean; detail: string } {
   const app = collapseSpace(application);
   const ext = collapseSpace(extracted);
@@ -99,7 +103,9 @@ export function checkGovernmentWarning(
   };
 
   if (!headerOk(ext)) {
-    const titleCase = /^Government Warning:/i.test(ext) && !ext.startsWith(REQUIRED_WARNING_HEADER);
+    const titleCase =
+      /^Government Warning:/i.test(ext) &&
+      !ext.startsWith(REQUIRED_WARNING_HEADER);
     return {
       pass: false,
       detail: titleCase
@@ -108,30 +114,36 @@ export function checkGovernmentWarning(
     };
   }
 
-  if (app && !headerOk(app)) {
+  if (warningHeaderBold !== true) {
     return {
       pass: false,
-      detail: "Application warning must also use all-caps GOVERNMENT WARNING:",
+      detail: "Warning header must be bold on the label",
     };
   }
 
-  const bodyOf = (s: string) =>
-    collapseSpace(s.slice(REQUIRED_WARNING_HEADER.length)).toLowerCase();
+  const labelBody = collapseSpace(
+    ext.slice(REQUIRED_WARNING_HEADER.length),
+  ).toLowerCase();
 
   const expectedBody = collapseSpace(STANDARD_WARNING_BODY).toLowerCase();
-  const extBody = bodyOf(ext);
-  const appBody = app ? bodyOf(app) : expectedBody;
 
-  // Compare extracted body to application body if provided, else to standard.
-  const target = app ? appBody : expectedBody;
-  if (extBody !== target && extBody !== expectedBody) {
+  let target: string;
+  if (app) {
+    // Strip optional header (any case) from application for body compare.
+    const appBodyRaw = app.replace(/^government warning:\s*/i, "");
+    target = collapseSpace(appBodyRaw).toLowerCase();
+  } else {
+    target = expectedBody;
+  }
+
+  if (labelBody !== target) {
     return {
       pass: false,
       detail: "Warning body text does not match the required statement",
     };
   }
 
-  return { pass: true, detail: "Header all-caps; body matches" };
+  return { pass: true, detail: "Header all-caps and bold; body matches" };
 }
 
 export function compareFields(
@@ -153,6 +165,7 @@ export function compareFields(
   const warn = checkGovernmentWarning(
     application.governmentWarning,
     extracted.governmentWarning,
+    extracted.warningHeaderBold,
   );
 
   return [

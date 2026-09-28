@@ -5,13 +5,13 @@ Prototype for AI-assisted alcohol label verification (Treasury take-home). Stand
 ## What it does
 
 1. Enter application fields: brand, class/type, ABV, net contents, government warning.
-2. Upload one or many label images.
+2. Upload one or many label images (or use a sample button).
 3. Server extracts fields via cloud vision (xAI or Gemini) and compares:
    - **Fuzzy:** brand, class/type, ABV, net contents (e.g. `STONE'S THROW` ≈ `Stone's Throw`, `45%` ≈ `90 Proof`, `750 mL` ≈ `750ml`)
-   - **Exact:** government warning header must be `GOVERNMENT WARNING:` (all caps). Title case fails.
-4. Results table shows per-file overall Pass/Fail, per-field Pass/Fail, and elapsed ms.
+   - **Exact:** government warning header on the label must be `GOVERNMENT WARNING:` (all caps) and bold. Title case fails.
+4. Results show large Pass/Fail, plain per-field lines, and elapsed ms.
 
-Batch = multi-file upload + results table (not a background job queue).
+Sample buttons load images and score offline — no API key required. Batch = multi-file upload + results (not a background job queue).
 
 ## Setup
 
@@ -36,15 +36,11 @@ Never commit real keys. `.env*` is gitignored (`.env.example` is safe).
 
 ## Assumptions & trade-offs
 
-- Public prototype uses cloud APIs for speed/quality. A production gov network that blocks outbound ML endpoints would need an on-prem path (e.g. Tesseract + local model); noted here only — not implemented in v1.
+- Public prototype uses cloud APIs for speed/quality. A government network that blocks outbound ML endpoints would need an on-prem model; this prototype uses a cloud vision API.
+- Bottler/address and country of origin are out of scope. Two blank ABV fields fail. Fluid ounces are not converted to milliliters.
 - Glare / odd camera angles are out of scope for v1.
-- Warning body compared whitespace-normalized against the application text (or the standard TTB statement); header capitalization is strict.
-- Fixture buttons fill application fields only; sample label images are added in a later phase.
+- Warning body is compared whitespace-normalized against the application text (or the standard TTB statement when the application warning is blank); label header capitalization and bold are strict.
 
 ## License
 
 Prototype for evaluation only.
-
-## Offline demo fixtures ($0)
-
-Three buttons load application fields + matching PNGs under `fixtures/`. Verification uses printed `labelExtracted` text from the JSON and runs `lib/match.ts` — no API key. Cloud vision remains only for unknown uploads when `XAI_API_KEY` or `GEMINI_API_KEY` is set.

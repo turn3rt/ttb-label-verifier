@@ -6,7 +6,10 @@ export type ApplicationFields = {
   governmentWarning: string;
 };
 
-export type ExtractedFields = ApplicationFields;
+export type ExtractedFields = ApplicationFields & {
+  /** Whether the GOVERNMENT WARNING: header appears bold on the label. */
+  warningHeaderBold?: boolean;
+};
 
 export type FieldKey = keyof ApplicationFields;
 

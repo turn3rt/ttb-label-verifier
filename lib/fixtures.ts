@@ -23,17 +23,19 @@ export const FIXTURES: FixtureDef[] = [
 
 const byId = new Map(FIXTURES.map((f) => [f.id, f]));
 const byHash = new Map(FIXTURES.map((f) => [f.sha256, f]));
-const byImageName = new Map(
-  FIXTURES.map((f) => [f.image.toLowerCase(), f]),
-);
 
 export function sha256Hex(buf: Buffer): string {
   return createHash("sha256").update(buf).digest("hex");
 }
 
+/**
+ * Offline fixture only when:
+ * - explicit fixtureId from a sample button, OR
+ * - uploaded bytes whose sha256 matches a known fixture.
+ * Filename alone never resolves a fixture.
+ */
 export function resolveFixture(opts: {
   fixtureId?: string | null;
-  fileName?: string | null;
   bytes?: Buffer | null;
 }): FixtureDef | null {
   if (opts.fixtureId && byId.has(opts.fixtureId)) {
@@ -42,10 +44,6 @@ export function resolveFixture(opts: {
   if (opts.bytes && opts.bytes.length > 0) {
     const h = sha256Hex(opts.bytes);
     if (byHash.has(h)) return byHash.get(h)!;
-  }
-  if (opts.fileName) {
-    const base = path.basename(opts.fileName).toLowerCase();
-    if (byImageName.has(base)) return byImageName.get(base)!;
   }
   return null;
 }
@@ -60,4 +58,4 @@ export function hasCloudKey(): boolean {
 }
 
 export const NO_KEY_LIVE_MESSAGE =
-  "Demo fixtures work offline. Live photo needs a key or browser OCR (next phase).";
+  "Live photo needs XAI_API_KEY or GEMINI_API_KEY on the server. Sample buttons work without a key.";
