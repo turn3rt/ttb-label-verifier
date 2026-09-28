@@ -2,6 +2,10 @@
 
 Prototype for alcohol label verification (Treasury take-home). Standalone—not integrated with COLA.
 
+**Deployed app:** [https://ttb-label-verifier-nine.vercel.app/](https://ttb-label-verifier-nine.vercel.app/)
+
+Treasury can open that link and use the three sample buttons. No install and no API key.
+
 ## Decision
 
 This demo does not call a paid vision API. It is an unpaid exercise, and there is no interview yet, so the running cost stays at $0.
@@ -12,9 +16,17 @@ The three sample buttons are the demo. They load a real label image and score it
 
 A photo that is not one of those samples is refused on purpose. The page tells the reviewer that this is a documented limit, not a crashed deploy.
 
+## Approach and tools
+
+- Next.js, React, and TypeScript. Deployed on Vercel.
+- The agent enters application fields and uploads one or many label images. Several images are scored against that one application in one request. That is the batch upload. It is not a background queue.
+- Sample buttons load the image and score it with `lib/match.ts` using the text stored in `fixtures/`. No network call. Brand, class/type, ABV (percent or proof), and net contents (mL and L) are fuzzy. The label warning must be the exact header `GOVERNMENT WARNING:` and bold; the body must match the application, or the standard Surgeon General statement when that field is blank.
+- A photo that is not one of the three samples is refused on purpose. This demo does not call a paid vision API.
+- Tools: no database, no COLA integration, no paid API.
+
 ## Setup
 
-Run locally with:
+Run the same build from this repo locally:
 
 ```bash
 npm install
