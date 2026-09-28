@@ -1,0 +1,12 @@
+{
+  "id": "pass-fuzzy-brand",
+  "expectedOverall": "Pass",
+  "application": {
+    "brand": "Stone's Throw",
+    "classType": "Straight Bourbon Whiskey",
+    "abv": "45% Alc./Vol.",
+    "netContents": "750 mL",
+    "governmentWarning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems."
+  },
+  "notes": "Fuzzy: STONE'S THROW / 90 Proof / 750ml on label should still Pass when images exist."
+}
