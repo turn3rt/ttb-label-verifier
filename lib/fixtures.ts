@@ -58,4 +58,4 @@ export function hasCloudKey(): boolean {
 }
 
 export const NO_KEY_LIVE_MESSAGE =
-  "Live photo needs XAI_API_KEY or GEMINI_API_KEY on the server. Sample buttons work without a key.";
+  "This photo is not one of the three demo samples, so it is refused on purpose in this $0 demo. It is a documented limit, not a missing-key or unfinished deploy.";

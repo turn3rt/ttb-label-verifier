@@ -1,45 +1,35 @@
 # TTB Label Verifier
 
-Prototype for AI-assisted alcohol label verification (Treasury take-home). Standalone — not integrated with COLA.
+Prototype for alcohol label verification (Treasury take-home). Standalone—not integrated with COLA.
 
-## What it does
+## Decision
 
-1. Enter application fields: brand, class/type, ABV, net contents, government warning.
-2. Upload one or many label images (or use a sample button).
-3. Server extracts fields via cloud vision (xAI or Gemini) and compares:
-   - **Fuzzy:** brand, class/type, ABV, net contents (e.g. `STONE'S THROW` ≈ `Stone's Throw`, `45%` ≈ `90 Proof`, `750 mL` ≈ `750ml`)
-   - **Exact:** government warning header on the label must be `GOVERNMENT WARNING:` (all caps) and bold. Title case fails.
-4. Results show large Pass/Fail, plain per-field lines, and elapsed ms.
+This demo does not call a paid vision API. It is an unpaid exercise, and there is no interview yet, so the running cost stays at $0.
 
-Sample buttons load images and score offline — no API key required. Batch = multi-file upload + results (not a background job queue).
+## Demo
+
+The three sample buttons are the demo. They load a real label image and score it with `lib/match.ts` from text stored in `fixtures/`. No key and no network call are required; results return in well under 5 seconds.
+
+A photo that is not one of those samples is refused on purpose. The page tells the reviewer that this is a documented limit, not a crashed deploy.
 
 ## Setup
 
+Run locally with:
+
 ```bash
 npm install
-cp .env.example .env.local
-# Set ONE of: XAI_API_KEY or GEMINI_API_KEY
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+Keys are not required for this demo. Open [http://localhost:3000](http://localhost:3000).
 
-### Environment variables
+## Limits
 
-| Name | Required | Notes |
-| --- | --- | --- |
-| `XAI_API_KEY` | one of | xAI API key (Vercel env / `.env.local` only) |
-| `GEMINI_API_KEY` | one of | Google Gemini API key |
-| `VERIFY_PROVIDER` | no | Force `xai` or `gemini` |
+Bottler address and country of origin are out of scope. Two blank ABV fields fail. Fluid ounces are not converted. Glare and odd angles are out of scope. A government network that blocks outbound ML would need an on-prem model.
 
-Never commit real keys. `.env*` is gitignored (`.env.example` is safe).
+## What I would do next
 
-## Assumptions & trade-offs
-
-- Public prototype uses cloud APIs for speed/quality. A government network that blocks outbound ML endpoints would need an on-prem model; this prototype uses a cloud vision API.
-- Bottler/address and country of origin are out of scope. Two blank ABV fields fail. Fluid ounces are not converted to milliliters.
-- Glare / odd camera angles are out of scope for v1.
-- Warning body is compared whitespace-normalized against the application text (or the standard TTB statement when the application warning is blank); label header capitalization and bold are strict.
+The code is already sketched in `lib/extract.ts`. With a budget, set `XAI_API_KEY` or `GEMINI_API_KEY` on the server, never in git, send the image with the existing prompt, and require JSON for `brand`, `classType`, `abv`, `netContents`, `governmentWarning`, and `warningHeaderBold`. Keep capitalization exact. Pass that object to `lib/match.ts`, which already checks all-caps plus bold on the label, fuzzy brand, class/type, ABV (including proof), and net contents. Time a new label against the 5-second limit. For a network that cannot call cloud ML, keep the same JSON contract and swap in an on-prem model. Do not build that path now.
 
 ## License
 

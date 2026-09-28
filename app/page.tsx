@@ -135,8 +135,8 @@ export default function HomePage() {
       <h1>TTB Label Verifier</h1>
       <p className="sub">
         Compare label images to the fields on an alcohol label application.
-        Sample buttons load an example label and score it without an API key.
-        For your own photos, the server needs a vision API key.
+        The three sample buttons load real label images and score them with no key or network call.
+        Other photos are refused on purpose and are not read in this $0 demo.
       </p>
 
       <section className="card">
